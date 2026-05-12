@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gantt-postgres
+    environment:
+      POSTGRES_USER: gantt
+      POSTGRES_PASSWORD: gantt
+      POSTGRES_DB: gantt
+    ports:
+      - "5432:5432"
+    volumes:
+      - gantt_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gantt -d gantt"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build: ./backend
+    container_name: gantt-backend
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      CORS_ORIGIN: "http://localhost:5173"
+      DATABASE_URL: postgresql+asyncpg://gantt:gantt@postgres:5432/gantt
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Whole backend tree from the host. No --reload: reloader parent can hide
+    # worker stdout in `docker logs` on some Docker Desktop setups. Override locally if needed.
+    volumes:
+      - ./backend:/app
+    command: python -u -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --log-config /app/app/logging_config.json
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build: ./frontend
+    container_name: gantt-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: "http://localhost:8000"
+      VITE_WS_URL: "ws://localhost:8000/ws"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  gantt_pgdata:
