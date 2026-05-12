@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="50x50" href="/icons8-gantt-chart-50.png" />
+    <link rel="icon" type="image/png" sizes="100x100" href="/icons8-gantt-chart-100.png" />
+    <link rel="apple-touch-icon" href="/icons8-gantt-chart-100.png" />
+    <title>Gantt AI</title>
+    <!--
+      Set the `dark` class synchronously before React hydrates.
+      This prevents a flash AND ensures Tailwind's `dark:` class-strategy
+      variants are active from the very first paint.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("gantt-theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (stored === "dark" || (!stored && prefersDark)) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (_) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

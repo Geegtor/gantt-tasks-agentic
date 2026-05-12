@@ -1,0 +1,101 @@
+export const translations = {
+  en: {
+    appName: "Gantt AI",
+    uploadExcel: "Upload Excel",
+    exportExcel: "Export Excel",
+    chat: {
+      title: "Chat",
+      live: "Live",
+      connecting: "Connecting…",
+      placeholder: "Type a command… (Enter = send, Shift+Enter = new line)",
+      hint: "Describe changes in natural language.",
+      hintExample: '"Move QA 3 days later"',
+      noChange: "— no plan change",
+    },
+    gantt: {
+      listHeader: "Task",
+      noTasks: "No tasks loaded. Upload an Excel file or type in the chat.",
+      tooltip: {
+        assignee: "Assignee",
+        duration: "Duration",
+        start: "Start",
+        end: "End",
+        predecessors: "Predecessors",
+        description: "Description",
+        none: "none",
+        days: (n: number) => `${n} day${n !== 1 ? "s" : ""}`,
+      },
+    },
+    modal: {
+      title: "Edit Task",
+      titleAdd: "New Task",
+      name: "Name",
+      assignee: "Assignee",
+      description: "Description",
+      startDate: "Start date",
+      duration: "Duration (days)",
+      predecessors: "Predecessors",
+      cancel: "Cancel",
+      save: "Save changes",
+      saving: "Saving…",
+      add: "Add task",
+      adding: "Adding…",
+      delete: "Delete",
+      deleting: "Deleting…",
+      aiEditing: "AI is editing the plan — manual edits are paused.",
+    },
+  },
+  ru: {
+    appName: "Gantt AI",
+    uploadExcel: "Загрузить Excel",
+    exportExcel: "Экспорт Excel",
+    chat: {
+      title: "Чат",
+      live: "Live",
+      connecting: "Подключение…",
+      placeholder: "Введите команду… (Enter = отправить, Shift+Enter = перенос строки)",
+      hint: "Описывайте изменения на русском или английском.",
+      hintExample: '"Перенеси QA на 3 дня позже"',
+      noChange: "— план не изменён",
+    },
+    gantt: {
+      listHeader: "Задача",
+      noTasks: "Задачи не загружены. Загрузите Excel или введите команду в чате.",
+      tooltip: {
+        assignee: "Исполнитель",
+        duration: "Длительность",
+        start: "Начало",
+        end: "Окончание",
+        predecessors: "Предшественники",
+        description: "Описание",
+        none: "нет",
+        days: (n: number) => {
+          if (n % 10 === 1 && n % 100 !== 11) return `${n} день`;
+          if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return `${n} дня`;
+          return `${n} дней`;
+        },
+      },
+    },
+    modal: {
+      title: "Редактировать задачу",
+      titleAdd: "Новая задача",
+      name: "Название",
+      assignee: "Исполнитель",
+      description: "Описание",
+      startDate: "Дата начала",
+      duration: "Длительность (дней)",
+      predecessors: "Предшественники",
+      cancel: "Отмена",
+      save: "Сохранить",
+      saving: "Сохранение…",
+      add: "Добавить",
+      adding: "Добавление…",
+      delete: "Удалить",
+      deleting: "Удаление…",
+      aiEditing: "ИИ редактирует план — ручные правки приостановлены.",
+    },
+  },
+} as const;
+
+export type Lang = keyof typeof translations;
+export type T = (typeof translations)[Lang];

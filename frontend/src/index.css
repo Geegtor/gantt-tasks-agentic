@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+/*
+ * Dark mode for gantt-task-react v0.3.x.
+ * The library uses CSS-Modules with hashed class names, so Tailwind dark: variants
+ * cannot target individual elements. Instead we invert + hue-rotate the entire chart
+ * container, which gives a natural dark appearance while preserving colour semantics
+ * (blue bars stay blue, red warnings stay red-ish, etc.).
+ */
+.dark .gantt-chart-container {
+  filter: invert(0.92) hue-rotate(180deg) contrast(0.95) brightness(1.05);
+  border-radius: inherit;
+  transition: filter 200ms ease;
+}
+
+.gantt-chart-container {
+  transition: filter 200ms ease;
+}
+
+
+/*
+ * Tooltips inside the gantt container are affected by the dark-mode invert filter.
+ * Counter-invert them so they render with their actual intended dark-mode colours.
+ */
+.dark .gantt-chart-container .gantt-tooltip-portal {
+  filter: invert(0.92) hue-rotate(180deg) contrast(0.95) brightness(1.05);
+}
