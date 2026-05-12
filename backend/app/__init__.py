@@ -1,0 +1,1 @@
+"""Gantt AI backend application."""
