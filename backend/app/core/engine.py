@@ -59,19 +59,33 @@ def apply_command(plan: ProjectPlan, cmd: Command) -> ProjectPlan:
 
         if cmd.swap_dependencies:
             aid, bid = cmd.task_a_id, cmd.task_b_id
-            # 1) Swap their own predecessor lists
-            a.predecessor_ids, b.predecessor_ids = b.predecessor_ids, a.predecessor_ids
-            # 2) Remove cross-references (A depending on B or vice versa → cycle)
-            a.predecessor_ids = [p for p in a.predecessor_ids if p not in (aid, bid)]
-            b.predecessor_ids = [p for p in b.predecessor_ids if p not in (aid, bid)]
-            # 3) Update all other tasks: references TO A become B, and vice versa
+            a_orig_preds = list(a.predecessor_ids)
+            b_orig_preds = list(b.predecessor_ids)
+
+            a_new_preds = [p for p in b_orig_preds if p not in (aid, bid)]
+            b_new_preds = [p for p in a_orig_preds if p not in (aid, bid)]
+
+            # Reverse the direct link: if B depended on A, now A depends on B
+            if aid in b_orig_preds:
+                a_new_preds.append(bid)
+            if bid in a_orig_preds:
+                b_new_preds.append(aid)
+
+            def _remap(preds: list[str]) -> list[str]:
+                return [bid if p == aid else aid if p == bid else p for p in preds]
+
+            task_updates: dict[str, list[str]] = {aid: a_new_preds, bid: b_new_preds}
             for t in new_plan.tasks:
-                if t.id in (aid, bid):
-                    continue
-                t.predecessor_ids = [
-                    bid if p == aid else aid if p == bid else p
-                    for p in t.predecessor_ids
-                ]
+                if t.id not in (aid, bid):
+                    remapped = _remap(t.predecessor_ids)
+                    if remapped != t.predecessor_ids:
+                        task_updates[t.id] = remapped
+
+            new_plan.tasks = [
+                t.model_copy(update={"predecessor_ids": task_updates[t.id]})
+                if t.id in task_updates else t
+                for t in new_plan.tasks
+            ]
             scheduler.assert_acyclic(new_plan)
             scheduler.full_recompute(new_plan)
         else:

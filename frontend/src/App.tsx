@@ -5,6 +5,7 @@ import { ChatPanel } from "./components/ChatPanel";
 import { ExcelControls } from "./components/ExcelControls";
 import { GanttView } from "./components/GanttView";
 import { TaskEditModal } from "./components/TaskEditModal";
+import { ToastContainer } from "./components/ToastContainer";
 import { usePlanStore } from "./store/usePlanStore";
 import { useTheme } from "./hooks/useTheme";
 import { useI18n } from "./i18n/I18nContext";
@@ -133,7 +134,10 @@ export default function App() {
     <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
       {/* ── Header ─────────────────────────────────────────────── */}
       <header className="shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 flex flex-wrap gap-3 items-center justify-between transition-colors duration-200">
-        <h1 className="text-lg font-semibold tracking-tight">{t.appName}</h1>
+        <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+          <img src="/icons8-gantt-chart-100.png" alt="" className="h-8 w-8" />
+          {t.appName}
+        </h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setAddingNew(true)}
@@ -171,6 +175,7 @@ export default function App() {
       {addingNew && (
         <TaskEditModal task={null} isNew allTasks={tasks} onClose={() => setAddingNew(false)} />
       )}
+      <ToastContainer />
     </div>
   );
 }

@@ -33,6 +33,14 @@ _LOG_FMT = logging.Formatter(
 )
 
 
+class _HealthFilter(logging.Filter):
+    """Drop successful /health access log lines to reduce noise."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return not ('"GET /health' in msg and " 200" in msg)
+
+
 def _stdout_handler() -> logging.StreamHandler:
     """New handler per logger; sharing one StreamHandler across loggers is discouraged."""
     h = logging.StreamHandler(sys.stdout)
@@ -76,6 +84,8 @@ def _configure_app_logging() -> None:
         access.handlers = [_stdout_handler()]
         access.setLevel(logging.INFO)
         access.propagate = False
+    if not any(isinstance(f, _HealthFilter) for f in access.filters):
+        access.addFilter(_HealthFilter())
 
     # Re-enable app subtree after Alembic fileConfig may have set disabled=True.
     for name in list(logging.Logger.manager.loggerDict.keys()):
@@ -116,6 +126,8 @@ def create_app() -> FastAPI:
     async def _log_each_request(request: Request, call_next):
         """Guaranteed request line in Docker even if uvicorn.access was mis-detected."""
         response = await call_next(request)
+        if request.url.path == "/health" and response.status_code == 200:
+            return response
         logging.getLogger("app.http").info(
             "%s %s -> %s",
             request.method,

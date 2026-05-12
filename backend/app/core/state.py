@@ -22,6 +22,7 @@ class SessionState:
         self._chat_turns: int = 0
         self._history: list[ChatTurn] = []
         self._connections: set[WebSocket] = set()
+        self._undo_plan: ProjectPlan | None = None
 
     @property
     def plan(self) -> ProjectPlan:
@@ -40,10 +41,22 @@ class SessionState:
         self._revision = 0
         self._chat_turns = 0
         self._history = []
+        self._undo_plan = None
 
     def set_plan(self, plan: ProjectPlan) -> None:
         self._plan = plan
         self._revision += 1
+
+    def push_undo(self, plan: ProjectPlan) -> None:
+        self._undo_plan = plan
+
+    def pop_undo(self) -> ProjectPlan | None:
+        plan = self._undo_plan
+        self._undo_plan = None
+        return plan
+
+    def has_undo(self) -> bool:
+        return self._undo_plan is not None
 
     def incr_chat_turn(self) -> int:
         self._chat_turns += 1

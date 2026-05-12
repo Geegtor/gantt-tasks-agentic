@@ -1,5 +1,5 @@
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
-import { sendChat } from "../api/client";
+import { sendChat, undoChat } from "../api/client";
 import { usePlanStore } from "../store/usePlanStore";
 import { useI18n } from "../i18n/I18nContext";
 
@@ -32,6 +32,7 @@ function formatErrorContent(raw: string): string {
 
 export function ChatPanel() {
   const [input, setInput] = useState("");
+  const [canUndo, setCanUndo] = useState(false);
   const addMessage = usePlanStore((s) => s.addMessage);
   const setPlan = usePlanStore((s) => s.setPlan);
   const setChatLoading = usePlanStore((s) => s.setChatLoading);
@@ -68,27 +69,48 @@ export function ChatPanel() {
       }
       let extra = "";
       if (res.clarify) extra += `\n\n${res.clarify}`;
+      let metaText = "";
       if (res.meta?.provenance === "replay") {
-        extra += "\n\n[cached] Reused a prior successful edit (semantic replay).";
+        metaText += "[cached] Reused a prior successful edit (semantic replay).";
       }
       if (res.meta) {
         const m = res.meta;
         if (m.applied === 0 || m.plan_changed === false) {
-          extra +=
-            `\n\n[debug] applied=${m.applied ?? "?"}` +
+          metaText +=
+            (metaText ? "\n" : "") +
+            `applied=${m.applied ?? "?"}` +
             (m.ops?.length ? ` ops=${m.ops.join(",")}` : "") +
             (m.reason ? ` reason=${m.reason}` : "") +
             (m.plan_changed === false ? ` ${t.chat.noChange}` : "") +
             (m.provenance ? ` provenance=${m.provenance}` : "");
         }
       }
-      addMessage({ role: "assistant", content: res.summary + extra });
+      addMessage({ role: "assistant", content: res.summary + extra, meta: metaText || undefined });
       setPlan(res.plan, typeof res.revision === "number" ? res.revision : undefined);
+      if (res.meta && res.meta.applied && res.meta.applied > 0) {
+        setCanUndo(true);
+      }
     } catch (err) {
       addMessage({
         role: "error",
         content: err instanceof Error ? err.message : String(err),
       });
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  async function handleUndo() {
+    if (chatLoading) return;
+    setChatLoading(true);
+    try {
+      const res = await undoChat();
+      setPlan(res.plan, typeof res.revision === "number" ? res.revision : undefined);
+      addMessage({ role: "assistant", content: t.chat.undoOk });
+      setCanUndo(false);
+    } catch {
+      addMessage({ role: "error", content: t.chat.undoFail });
+      setCanUndo(false);
     } finally {
       setChatLoading(false);
     }
@@ -108,9 +130,22 @@ export function ChatPanel() {
       {/* Header */}
       <div className="shrink-0 px-3 py-2 border-b border-slate-100 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 flex justify-between items-center">
         <span>{t.chat.title}</span>
-        <span className={`text-xs flex items-center gap-1 ${wsConnected ? "text-emerald-500" : "text-amber-500"}`}>
-          <span className={`inline-block w-1.5 h-1.5 rounded-full ${wsConnected ? "bg-emerald-500" : "bg-amber-400"}`} />
-          {wsConnected ? t.chat.live : t.chat.connecting}
+        <span className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void handleUndo()}
+            disabled={!canUndo || chatLoading}
+            title={t.chat.undo}
+            className="w-6 h-6 flex items-center justify-center rounded text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-30 disabled:pointer-events-none transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+              <path d="M3 7v6h6" /><path d="M3 13a9 9 0 0 1 3-7.5A9 9 0 0 1 21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3" />
+            </svg>
+          </button>
+          <span className={`text-xs flex items-center gap-1 ${wsConnected ? "text-emerald-500" : "text-amber-500"}`}>
+            <span className={`inline-block w-1.5 h-1.5 rounded-full ${wsConnected ? "bg-emerald-500" : "bg-amber-400"}`} />
+            {wsConnected ? t.chat.live : t.chat.connecting}
+          </span>
         </span>
       </div>
 
@@ -137,8 +172,14 @@ export function ChatPanel() {
               <span className="whitespace-pre-wrap">
                 {m.role === "error" ? formatErrorContent(m.content) : m.content}
               </span>
-              <span className={`block text-[10px] mt-1 ${m.role === "user" ? "text-blue-200" : m.role === "error" ? "text-red-400 dark:text-red-500" : "text-slate-400 dark:text-slate-500"}`}>
+              <span className={`flex items-center gap-1 text-[10px] mt-1 ${m.role === "user" ? "text-blue-200" : m.role === "error" ? "text-red-400 dark:text-red-500" : "text-slate-400 dark:text-slate-500"}`}>
                 {formatTime(m.timestamp)}
+                {m.meta && (
+                  <span
+                    title={m.meta}
+                    className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] bg-slate-300 dark:bg-slate-500 text-slate-600 dark:text-slate-200 cursor-help"
+                  >?</span>
+                )}
               </span>
             </div>
           </div>

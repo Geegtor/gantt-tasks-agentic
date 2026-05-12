@@ -4,6 +4,10 @@ import { usePlanStore } from "../store/usePlanStore";
 import type { ApiTask } from "../types";
 import { useI18n } from "../i18n/I18nContext";
 
+function useToast() {
+  return usePlanStore((s) => s.addToast);
+}
+
 interface Props {
   task: ApiTask | null;
   /** When true, the modal opens in "create new task" mode. */
@@ -15,6 +19,7 @@ interface Props {
 export function TaskEditModal({ task, isNew, allTasks, onClose }: Props) {
   const setPlan = usePlanStore((s) => s.setPlan);
   const chatLoading = usePlanStore((s) => s.chatLoading);
+  const addToast = useToast();
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -24,7 +29,6 @@ export function TaskEditModal({ task, isNew, allTasks, onClose }: Props) {
   const [predecessorIds, setPredecessorIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isNew) {
@@ -34,7 +38,6 @@ export function TaskEditModal({ task, isNew, allTasks, onClose }: Props) {
       setDurationDays(1);
       setStartDate("");
       setPredecessorIds([]);
-      setError("");
       return;
     }
     if (!task) return;
@@ -44,7 +47,6 @@ export function TaskEditModal({ task, isNew, allTasks, onClose }: Props) {
     setDurationDays(task.duration_days);
     setStartDate(task.start_date);
     setPredecessorIds(task.predecessor_ids ?? []);
-    setError("");
   }, [task, isNew]);
 
   if (!task && !isNew) return null;
@@ -53,7 +55,6 @@ export function TaskEditModal({ task, isNew, allTasks, onClose }: Props) {
 
   async function handleSave() {
     setSaving(true);
-    setError("");
     try {
       if (isNew) {
         const res = await addTask({
@@ -78,7 +79,8 @@ export function TaskEditModal({ task, isNew, allTasks, onClose }: Props) {
       }
       onClose();
     } catch (e) {
-      setError(parseError(e));
+      onClose();
+      addToast(parseError(e), "error");
     } finally {
       setSaving(false);
     }
@@ -87,13 +89,13 @@ export function TaskEditModal({ task, isNew, allTasks, onClose }: Props) {
   async function handleDelete() {
     if (!task) return;
     setDeleting(true);
-    setError("");
     try {
       const res = await deleteTask(task.id);
       setPlan(res.plan, typeof res.revision === "number" ? res.revision : undefined);
       onClose();
     } catch (e) {
-      setError(parseError(e));
+      onClose();
+      addToast(parseError(e), "error");
     } finally {
       setDeleting(false);
     }
@@ -161,11 +163,6 @@ export function TaskEditModal({ task, isNew, allTasks, onClose }: Props) {
             </Field>
           )}
 
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
           {chatLoading && (
             <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
               {t.modal.aiEditing}

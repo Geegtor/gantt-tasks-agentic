@@ -117,6 +117,12 @@ export async function deleteTask(taskId: string): Promise<{ plan: ProjectPlan; r
   return r.json() as Promise<{ plan: ProjectPlan; revision?: number }>;
 }
 
+export async function undoChat(): Promise<{ plan: ProjectPlan; revision?: number }> {
+  const r = await fetch(`${API}/undo`, { method: "POST", cache: "no-store" });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ plan: ProjectPlan; revision?: number }>;
+}
+
 export function exportUrl(): string {
   return `${API}/export`;
 }

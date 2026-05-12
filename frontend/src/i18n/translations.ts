@@ -11,6 +11,9 @@ export const translations = {
       hint: "Describe changes in natural language.",
       hintExample: '"Move QA 3 days later"',
       noChange: "— no plan change",
+      undo: "Undo last action",
+      undoOk: "Last action has been undone.",
+      undoFail: "Nothing to undo",
     },
     gantt: {
       listHeader: "Task",
@@ -57,6 +60,9 @@ export const translations = {
       hint: "Описывайте изменения на русском или английском.",
       hintExample: '"Перенеси QA на 3 дня позже"',
       noChange: "— план не изменён",
+      undo: "Отменить последнее действие",
+      undoOk: "Последнее действие отменено.",
+      undoFail: "Нечего отменять",
     },
     gantt: {
       listHeader: "Задача",

@@ -388,6 +388,7 @@ async def _commit_outcome(snapshot: ChatSnapshot, outcome: ComputeOutcome, user_
                 session.add_history_turn(user=user_message, assistant=outcome.clarify)
         elif outcome.kind == "applied":
             session.incr_chat_turn()
+            session.push_undo(session.plan.model_copy(deep=True))
             session.set_plan(outcome.plan_after)
             session.add_history_turn(user=user_message, assistant=outcome.summary or "")
         return True, session.revision
