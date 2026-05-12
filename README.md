@@ -37,7 +37,6 @@ docker compose up              # PostgreSQL 16 + Backend + Frontend
 | Frontend | http://localhost:5173 |
 | Backend API | http://localhost:8000 |
 | Swagger | http://localhost:8000/docs |
-| MCP | http://localhost:8000/mcp |
 
 ### Без Docker
 
